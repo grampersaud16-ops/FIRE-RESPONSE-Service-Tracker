@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NYC Service Call Tracker</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h2 { text-align: center; }
+  .borough { display: inline-block; vertical-align: top; width: 23%; margin: 1%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; }
+  .job { padding: 5px; margin: 5px 0; border-radius: 5px; color: white; }
+  .open { background-color: red; }
+  .completed { background-color: green; }
+  .pending { background-color: orange; }
+  .to-return { background-color: purple; }
+  textarea { width: 100%; margin-top: 5px; }
+  input[type=text] { width: 80%; }
+  select { width: 18%; }
+  button { margin-top: 5px; padding: 3px 6px; }
+</style>
+</head>
+<body>
+
+<h2>NYC Service Call Tracker</h2>
+
+<div id="tracker-container">
+  <div class="borough" id="Queens">
+    <h3>Queens</h3>
+    <div class="job-list"></div>
+    <input type="text" placeholder="Job site">
+    <select>
+      <option value="open">Open</option>
+      <option value="completed">Completed</option>
+      <option value="pending">Pending</option>
+      <option value="to-return">To Return</option>
+    </select>
+    <button onclick="addJob('Queens')">Add</button>
+  </div>
+
+  <div class="borough" id="Brooklyn">
+    <h3>Brooklyn</h3>
+    <div class="job-list"></div>
+    <input type="text" placeholder="Job site">
+    <select>
+      <option value="open">Open</option>
+      <option value="completed">Completed</option>
+      <option value="pending">Pending</option>
+      <option value="to-return">To Return</option>
+    </select>
+    <button onclick="addJob('Brooklyn')">Add</button>
+  </div>
+
+  <div class="borough" id="Manhattan">
+    <h3>Manhattan</h3>
+    <div class="job-list"></div>
+    <input type="text" placeholder="Job site">
+    <select>
+      <option value="open">Open</option>
+      <option value="completed">Completed</option>
+      <option value="pending">Pending</option>
+      <option value="to-return">To Return</option>
+    </select>
+    <button onclick="addJob('Manhattan')">Add</button>
+  </div>
+
+  <div class="borough" id="Bronx">
+    <h3>Bronx</h3>
+    <div class="job-list"></div>
+    <input type="text" placeholder="Job site">
+    <select>
+      <option value="open">Open</option>
+      <option value="completed">Completed</option>
+      <option value="pending">Pending</option>
+      <option value="to-return">To Return</option>
+    </select>
+    <button onclick="addJob('Bronx')">Add</button>
+  </div>
+</div>
+
+<script>
+let jobs = JSON.parse(localStorage.getItem('nycJobs')) || {};
+
+function saveJobs() {
+  localStorage.setItem('nycJobs', JSON.stringify(jobs));
+}
+
+function loadJobs() {
+  for (const borough in jobs) {
+    jobs[borough].forEach(job => renderJob(borough, job));
+  }
+}
+
+function addJob(borough) {
+  const container = document.getElementById(borough);
+  const jobInput = container.querySelector('input[type=text]');
+  const statusSelect = container.querySelector('select');
+  const jobName = jobInput.value.trim();
+  const status = statusSelect.value;
+  if (!jobName) return alert('Please enter a job site');
+
+  const job = { name: jobName, status: status, notes: '' };
+  
+  if (!jobs[borough]) jobs[borough] = [];
+  jobs[borough].push(job);
+  saveJobs();
+  renderJob(borough, job);
+  jobInput.value = '';
+}
+
+function renderJob(borough, job) {
+  const container = document.getElementById(borough);
+  const jobDiv = document.createElement('div');
+  jobDiv.className = 'job ' + job.status;
+  jobDiv.innerHTML = `
+    <strong contenteditable="true">${job.name}</strong>
+    <textarea placeholder="Add notes/outcomes">${job.notes}</textarea>
+    <br>
+    <select>
+      <option value="open" ${job.status==='open'?'selected':''}>Open</option>
+      <option value="completed" ${job.status==='completed'?'selected':''}>Completed</option>
+      <option value="pending" ${job.status==='pending'?'selected':''}>Pending</option>
+      <option value="to-return" ${job.status==='to-return'?'selected':''}>To Return</option>
+    </select>
+  `;
+
+  const textarea = jobDiv.querySelector('textarea');
+  const select = jobDiv.querySelector('select');
+  const nameField = jobDiv.querySelector('strong');
+
+  // Save changes to local storage
+  textarea.addEventListener('input', () => {
+    job.notes = textarea.value;
+    saveJobs();
+  });
+
+  select.addEventListener('change', () => {
+    job.status = select.value;
+    jobDiv.className = 'job ' + job.status;
+    saveJobs();
+  });
+
+  nameField.addEventListener('input', () => {
+    job.name = nameField.innerText;
+    saveJobs();
+  });
+
+  container.querySelector('.job-list').appendChild(jobDiv);
+}
+
+// Load saved jobs on page load
+loadJobs();
+</script>
+
+</body>
+</html>
