@@ -3,48 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NYC Service Call Tracker</title>
+<title>FIRE RESPONSE INC SERVICE CALLS</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
-  h2 { text-align: center; }
-  .borough-container { display: flex; justify-content: space-between; flex-wrap: wrap; }
-  .borough { width: 23%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin-bottom: 20px; }
-  .borough h3 { text-align: center; }
-  .job-card { background: #eee; border-radius: 5px; padding: 8px; margin-bottom: 10px; }
-  .job-status { font-weight: bold; color: white; padding: 2px 6px; border-radius: 4px; }
-  .status-open { background-color: red; }
-  .status-completed { background-color: green; }
-  .status-pending { background-color: orange; }
-  .status-to-return { background-color: purple; }
-  .job-card textarea { width: 100%; margin-top: 5px; resize: vertical; }
-  .job-card input[type=text] { width: 100%; margin-bottom: 5px; }
-  .job-card select { width: 100%; margin-bottom: 5px; }
-  .add-job-form { margin-bottom: 10px; }
-  button { width: 100%; padding: 5px; margin-top: 5px; }
+  body { 
+    font-family: Arial, sans-serif; 
+    background-color: pink; 
+    margin: 0; 
+    padding: 20px; 
+  }
+  h1 { 
+    text-align: center; 
+    color: #fff; 
+    background-color: red; 
+    padding: 15px; 
+    border-radius: 10px; 
+  }
+  .tracker-container {
+    display: flex; 
+    justify-content: space-between; 
+    flex-wrap: wrap; 
+    margin-top: 20px;
+  }
+  .borough {
+    width: 23%; 
+    background: #fff; 
+    border-radius: 10px; 
+    padding: 10px; 
+    margin-bottom: 20px;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+  }
+  .borough h2 {
+    text-align: center; 
+    margin-top: 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    text-align: left;
+  }
+  select, input, textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 5px;
+  }
+  .status-open { background-color: red; color: white; }
+  .status-completed { background-color: green; color: white; }
+  .status-pending { background-color: orange; color: white; }
+  .status-to-return { background-color: purple; color: white; }
+  button { padding: 5px; width: 100%; margin-bottom: 10px; background-color: red; color: white; border: none; border-radius: 5px; cursor: pointer; }
 </style>
 </head>
 <body>
 
-<h2>NYC Service Call Tracker</h2>
-<div class="borough-container">
-  <div class="borough" id="Queens"><h3>Queens</h3></div>
-  <div class="borough" id="Brooklyn"><h3>Brooklyn</h3></div>
-  <div class="borough" id="Manhattan"><h3>Manhattan</h3></div>
-  <div class="borough" id="Bronx"><h3>Bronx</h3></div>
+<h1>FIRE RESPONSE INC SERVICE CALLS</h1>
+
+<div class="tracker-container" id="tracker-container">
+  <div class="borough" id="Queens"><h2>Queens</h2></div>
+  <div class="borough" id="Brooklyn"><h2>Brooklyn</h2></div>
+  <div class="borough" id="Manhattan"><h2>Manhattan</h2></div>
+  <div class="borough" id="Bronx"><h2>Bronx</h2></div>
 </div>
 
 <script>
-let jobs = JSON.parse(localStorage.getItem('nycJobs')) || { Queens: [], Brooklyn: [], Manhattan: [], Bronx: [] };
+let jobs = JSON.parse(localStorage.getItem('nycJobs')) || {Queens: [], Brooklyn: [], Manhattan: [], Bronx: []};
 
-// Function to save jobs to localStorage
 function saveJobs() {
   localStorage.setItem('nycJobs', JSON.stringify(jobs));
 }
 
-// Function to create the "Add Job" form for each borough
-function createAddJobForm(boroughDiv, boroughName) {
+// Create Add Job form and table for each borough
+function createBoroughSection(boroughDiv, boroughName) {
+  // Create Add Job form
   const form = document.createElement('div');
-  form.className = 'add-job-form';
   form.innerHTML = `
     <input type="text" placeholder="Job site" class="job-site">
     <input type="text" placeholder="Trouble/issues" class="job-trouble">
@@ -56,70 +91,118 @@ function createAddJobForm(boroughDiv, boroughName) {
     </select>
     <textarea placeholder="Notes/outcomes" class="job-notes"></textarea>
     <button>Add Job</button>
+    <button class="sort-btn">Sort by Status</button>
   `;
   boroughDiv.appendChild(form);
 
-  const addButton = form.querySelector('button');
-  addButton.addEventListener('click', () => {
+  // Create table
+  const table = document.createElement('table');
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Job Site</th>
+        <th>Trouble/Issues</th>
+        <th>Status</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody class="job-table-body"></tbody>
+  `;
+  boroughDiv.appendChild(table);
+
+  const tbody = table.querySelector('.job-table-body');
+
+  // Add Job Button
+  form.querySelector('button').addEventListener('click', () => {
     const site = form.querySelector('.job-site').value.trim();
     const trouble = form.querySelector('.job-trouble').value.trim();
     const status = form.querySelector('.job-status').value;
     const notes = form.querySelector('.job-notes').value.trim();
+    if (!site || !trouble) return alert('Please enter Job Site and Trouble/Issues');
 
-    if (!site || !trouble) return alert("Please enter job site and trouble/issues");
-
-    const job = { site, trouble, status, notes };
+    const job = {site, trouble, status, notes};
     jobs[boroughName].push(job);
     saveJobs();
-    renderJob(boroughDiv, job, boroughName);
+    renderJobRow(tbody, job, boroughName);
     form.querySelector('.job-site').value = '';
     form.querySelector('.job-trouble').value = '';
     form.querySelector('.job-notes').value = '';
   });
+
+  // Sort Button
+  form.querySelector('.sort-btn').addEventListener('click', () => {
+    jobs[boroughName].sort((a,b) => {
+      const order = {open: 1, pending: 2, 'to-return': 3, completed: 4};
+      return order[a.status] - order[b.status];
+    });
+    renderAllJobs(tbody, boroughName);
+  });
+
+  // Render existing jobs
+  jobs[boroughName].forEach(job => renderJobRow(tbody, job, boroughName));
 }
 
-// Function to render a job card
-function renderJob(boroughDiv, job, boroughName) {
-  const card = document.createElement('div');
-  card.className = 'job-card';
-  card.innerHTML = `
-    <input type="text" value="${job.site}" class="job-site-edit">
-    <input type="text" value="${job.trouble}" class="job-trouble-edit">
-    <select class="job-status-edit">
-      <option value="open" ${job.status==='open'?'selected':''}>Open</option>
-      <option value="completed" ${job.status==='completed'?'selected':''}>Completed</option>
-      <option value="pending" ${job.status==='pending'?'selected':''}>Pending</option>
-      <option value="to-return" ${job.status==='to-return'?'selected':''}>To Return</option>
-    </select>
-    <div class="job-status ${'status-'+job.status}">${job.status.toUpperCase()}</div>
-    <textarea class="job-notes-edit">${job.notes}</textarea>
-  `;
-  boroughDiv.appendChild(card);
+function renderJobRow(tbody, job, boroughName) {
+  const row = document.createElement('tr');
 
-  const siteInput = card.querySelector('.job-site-edit');
-  const troubleInput = card.querySelector('.job-trouble-edit');
-  const statusSelect = card.querySelector('.job-status-edit');
-  const notesInput = card.querySelector('.job-notes-edit');
-  const statusDiv = card.querySelector('.job-status');
-
-  // Update localStorage when any field changes
+  const siteCell = document.createElement('td');
+  const siteInput = document.createElement('input');
+  siteInput.value = job.site;
   siteInput.addEventListener('input', () => { job.site = siteInput.value; saveJobs(); });
+  siteCell.appendChild(siteInput);
+
+  const troubleCell = document.createElement('td');
+  const troubleInput = document.createElement('input');
+  troubleInput.value = job.trouble;
   troubleInput.addEventListener('input', () => { job.trouble = troubleInput.value; saveJobs(); });
+  troubleCell.appendChild(troubleInput);
+
+  const statusCell = document.createElement('td');
+  const statusSelect = document.createElement('select');
+  ['open','completed','pending','to-return'].forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+    if (job.status === s) opt.selected = true;
+    statusSelect.appendChild(opt);
+  });
+  const statusLabel = document.createElement('span');
+  statusLabel.textContent = job.status.toUpperCase();
+  statusLabel.className = 'status-' + job.status;
   statusSelect.addEventListener('change', () => {
     job.status = statusSelect.value;
-    statusDiv.textContent = job.status.toUpperCase();
-    statusDiv.className = 'job-status status-' + job.status;
+    statusLabel.textContent = job.status.toUpperCase();
+    statusLabel.className = 'status-' + job.status;
     saveJobs();
   });
+  statusCell.appendChild(statusSelect);
+  statusCell.appendChild(statusLabel);
+
+  const notesCell = document.createElement('td');
+  const notesInput = document.createElement('textarea');
+  notesInput.value = job.notes;
   notesInput.addEventListener('input', () => { job.notes = notesInput.value; saveJobs(); });
+  notesCell.appendChild(notesInput);
+
+  row.appendChild(siteCell);
+  row.appendChild(troubleCell);
+  row.appendChild(statusCell);
+  row.appendChild(notesCell);
+
+  tbody.appendChild(row);
 }
 
-// Initialize tracker
-['Queens','Brooklyn','Manhattan','Bronx'].forEach(boroughName => {
-  const boroughDiv = document.getElementById(boroughName);
-  createAddJobForm(boroughDiv, boroughName);
-  jobs[boroughName].forEach(job => renderJob(boroughDiv, job, boroughName));
+function renderAllJobs(tbody, boroughName) {
+  tbody.innerHTML = '';
+  jobs[boroughName].forEach(job => renderJobRow(tbody, job, boroughName));
+}
+
+// Initialize tracker for all boroughs
+['Queens','Brooklyn','Manhattan','Bronx'].forEach(name => {
+  const div = document.getElementById(name);
+  createBoroughSection(div, name);
 });
 </script>
+
 </body>
 </html>
