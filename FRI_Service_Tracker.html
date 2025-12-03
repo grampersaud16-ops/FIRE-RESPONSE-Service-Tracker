@@ -76,9 +76,7 @@ function saveJobs() {
   localStorage.setItem('nycJobs', JSON.stringify(jobs));
 }
 
-// Create Add Job form and table for each borough
 function createBoroughSection(boroughDiv, boroughName) {
-  // Create Add Job form
   const form = document.createElement('div');
   form.innerHTML = `
     <input type="text" placeholder="Job site" class="job-site">
@@ -95,7 +93,6 @@ function createBoroughSection(boroughDiv, boroughName) {
   `;
   boroughDiv.appendChild(form);
 
-  // Create table
   const table = document.createElement('table');
   table.innerHTML = `
     <thead>
@@ -109,10 +106,8 @@ function createBoroughSection(boroughDiv, boroughName) {
     <tbody class="job-table-body"></tbody>
   `;
   boroughDiv.appendChild(table);
-
   const tbody = table.querySelector('.job-table-body');
 
-  // Add Job Button
   form.querySelector('button').addEventListener('click', () => {
     const site = form.querySelector('.job-site').value.trim();
     const trouble = form.querySelector('.job-trouble').value.trim();
@@ -129,16 +124,14 @@ function createBoroughSection(boroughDiv, boroughName) {
     form.querySelector('.job-notes').value = '';
   });
 
-  // Sort Button
   form.querySelector('.sort-btn').addEventListener('click', () => {
     jobs[boroughName].sort((a,b) => {
-      const order = {open: 1, pending: 2, 'to-return': 3, completed: 4};
+      const order = {open:1, pending:2, 'to-return':3, completed:4};
       return order[a.status] - order[b.status];
     });
     renderAllJobs(tbody, boroughName);
   });
 
-  // Render existing jobs
   jobs[boroughName].forEach(job => renderJobRow(tbody, job, boroughName));
 }
 
@@ -197,7 +190,6 @@ function renderAllJobs(tbody, boroughName) {
   jobs[boroughName].forEach(job => renderJobRow(tbody, job, boroughName));
 }
 
-// Initialize tracker for all boroughs
 ['Queens','Brooklyn','Manhattan','Bronx'].forEach(name => {
   const div = document.getElementById(name);
   createBoroughSection(div, name);
